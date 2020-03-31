@@ -46,55 +46,79 @@ def AdjustingErrorsOutliers(tempPred, df) :
 # Train model
 def TrainMdl (trainIpData, trainOpData, PredictionData) :
     testSize = 0.1 # 90:10 ratio >> for final testing
-    randomState = 42 # For train test split
-
-    # Final validation
-    X_train, X_test, y_train, y_test = train_test_split(trainIpData, trainOpData, test_size=testSize, random_state=randomState)
-
-    # Another set of input
-    TrainIP = X_train[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal']]
-    TrainOP = X_train['gammaFun']
-    TestIP = X_test[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal']]
-    TestOP = X_test['gammaFun']
+    #randomState = 42 # For train test split
 
     print('Training starts ...')
-    # Adaboost Regressor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    treeDepth = 10 # Fixed
-    mdl = DecisionTreeRegressor(max_depth=treeDepth) # This is fixed
-    param_grid = {
-    'n_estimators': [100, 250, 500],
-    'learning_rate': [0.1, 0.01, 0.001]
-                }
-    regrMdl = AdaBoostRegressor(base_estimator=mdl)
-    clf = RandomizedSearchCV(estimator = regrMdl, param_distributions = param_grid,
-                                     n_iter = 100, cv = 3, verbose=2, random_state=42, n_jobs = -1)
-    clf.fit(TrainIP, TrainOP)
-    print('Model ready ...')
 
-    # Calculating Error
-    y_predictedTrain = clf.predict(TrainIP) # Predicting the gamma function
-    y_predictedTrain = AdjustingErrorsOutliers(y_predictedTrain * TrainIP['day5'].to_numpy(), TrainIP)
-    ErrorCalc(y_predictedTrain, y_train.to_numpy(), 'Train Data-set') # y_predictedTrain converted to numbers
+    totalIte = 10
 
-    y_predictedTest = clf.predict(TestIP) # Predicting the gamma function
-    y_predictedTest = AdjustingErrorsOutliers(y_predictedTest * TestIP['day5'].to_numpy(), TestIP)
-    ErrorCalc(y_predictedTest, y_test.to_numpy(), 'Validation Data-set ') # y_predictedTest converted to numbers
+    for iLoop in range(totalIte):
 
-    # Prediction
-    finalPrediction = clf.predict(PredictionData)  # Predicting the gamma function
-    tempPred = finalPrediction * PredictionData['day5'].to_numpy()
-    y_predictedFinal = AdjustingErrorsOutliers(tempPred, PredictionData)
+        if iLoop == 0 :
+            randomState = 42
+        else :
+            randomState=None
 
 
-    return y_predictedFinal
+        # Final validation
+        X_train, X_test, y_train, y_test = train_test_split(trainIpData, trainOpData, test_size=testSize, random_state=randomState)
+
+        # Extrating features
+        TrainIP = X_train[['diff1', 'diff2', 'diff3', 'diff4', 'tempVal', 'ageVal']]
+        TrainOP = X_train['gammaFun']
+        TestIP = X_test[['diff1', 'diff2', 'diff3', 'diff4', 'tempVal', 'ageVal']]
+        TestOP = X_test['gammaFun']
+
+
+        # Adaboost Regressor >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        treeDepth = 10 # Fixed
+        mdl = DecisionTreeRegressor(max_depth=treeDepth) # This is fixed
+        param_grid = {
+        'n_estimators': [10, 50, 100, 250, 500],
+        'learning_rate': [0.3, 0.2, 0.1, 0.01, 0.001]
+                    }
+        regrMdl = AdaBoostRegressor(base_estimator=mdl)
+        clf = RandomizedSearchCV(estimator = regrMdl, param_distributions = param_grid,
+                                         n_iter = 100, cv = 3, verbose=0, random_state=42, n_jobs = -1)
+        clf.fit(TrainIP, TrainOP)
+
+
+        # Calculating Error >> X_train is a superset of TrainIP
+        y_predictedTrain = clf.predict(TrainIP) # Predicting the gamma function
+        y_predictedTrain = AdjustingErrorsOutliers(y_predictedTrain * X_train['day5'].to_numpy(), X_train)
+        ErrorCalc(y_predictedTrain, y_train.to_numpy(), 'Train Data-set') # y_predictedTrain converted to numbers
+
+        y_predictedTest = clf.predict(TestIP) # Predicting the gamma function
+        y_predictedTest = AdjustingErrorsOutliers(y_predictedTest * X_test['day5'].to_numpy(), X_test)
+        ErrorCalc(y_predictedTest, y_test.to_numpy(), 'Validation Data-set ') # y_predictedTest converted to numbers
+
+        print('-----------------------------------------------------------')
+
+        # Extrating primary features
+        PredictionDataF = PredictionData[['diff1', 'diff2', 'diff3', 'diff4', 'tempVal', 'ageVal']]
+
+        # Prediction
+        if iLoop == 0 :
+            finalPrediction = clf.predict(PredictionDataF)  # Predicting the gamma function
+            tempPred = finalPrediction * PredictionData['day5'].to_numpy()
+            y_predictedFinal0 = AdjustingErrorsOutliers(tempPred, PredictionData)
+        else :
+            finalPrediction = clf.predict(PredictionDataF)  # Predicting the gamma function
+            tempPred = finalPrediction * PredictionData['day5'].to_numpy()
+            y_predictedFinal = AdjustingErrorsOutliers(tempPred, PredictionData)
+            y_predictedFinal0 = y_predictedFinal0 + y_predictedFinal
+
+    y_predictedFinal0 = np.round(y_predictedFinal0 / totalIte)
+    return y_predictedFinal0
 
 
 # Main code starts
 df = pd.read_csv('G:/COVID19_Data/Processed_Data/TrainTest.csv')
 dfP = pd.read_csv('G:/COVID19_Data/Processed_Data/Predict.csv')
-trainIpData = df[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal', 'gammaFun']]
+trainIpData = df[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal', 'gammaFun', 'diff1', 'diff2', 'diff3', 'diff4']]
 trainOpData = df['dayPredict']
-PredictionData = dfP[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal']]
+PredictionData = dfP[['day1', 'day2', 'day3', 'day4', 'day5', 'tempVal', 'ageVal', 'diff1', 'diff2', 'diff3', 'diff4']]
+#print(PredictionData.head())
 predictions = TrainMdl (trainIpData, trainOpData, PredictionData)
 dfP['NextPredictions'] = predictions
 dfP['LatestNumberCases'] = dfP['day5']
