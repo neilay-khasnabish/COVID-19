@@ -25,7 +25,7 @@ def plotGraph3(ref, mdl, varName):
     plt.show()
 
 
-# Finding RMSE
+# Finding Error
 def ErrorCalc(mdl, ref, tag):
     relError = np.abs(mdl - ref)/ np.abs(ref+1)
     MeanErrorV = np.mean(relError)
