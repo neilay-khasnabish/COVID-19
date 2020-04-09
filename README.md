@@ -1,6 +1,5 @@
 # COVID-19
-This model is an one-step ahead predictor
-This model cannot predict over a long horizon
+This model is an one-step ahead predictor. This model cannot predict over a long horizon.
 
 Steps to run the codes:
 1. Please download the latest time series data from John Hopkins University's repository, and medAge.csv, Temp.csv and WorldCountryNames.csv from our repository
