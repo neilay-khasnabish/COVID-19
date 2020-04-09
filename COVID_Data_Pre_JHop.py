@@ -16,13 +16,15 @@ if displayAll == 1 :
     pd.set_option('display.max_columns', None)
 
 # Adjust John Hopkins Dataset
-worldCorona = pd.read_csv('G:/COVID19_Data/time_series_19-covid-Confirmed.csv')
+worldCorona = pd.read_csv('G:/COVID19_Data/time_series_covid19_confirmed_global.csv')
+worldCorona = worldCorona.fillna(0)
 worldCorona = worldCorona.drop(['Province/State'], axis=1)
 worldCorona['Country'] = worldCorona['Country/Region']
 worldCorona = worldCorona.drop(['Country/Region', 'Lat', 'Long'], axis=1)
 worldCorona = worldCorona.groupby(['Country']).sum()
 worldCorona.to_csv('Hellos.csv')
 worldCorona = pd.read_csv('Hellos.csv')
+
 
 # Total countries in the world
 totalCountries = pd.read_csv('G:/COVID19_Data/WorldCountryNames.csv')
@@ -53,19 +55,24 @@ for i in range(rf): # It scans through the entire row
         day3 = result.iloc[i, iCol-2]
         day2 = result.iloc[i, iCol-3]
         day1 = result.iloc[i, iCol-4]
+        diff1 = day5 - day4
+        diff2 = day4 - day3
+        diff3 = day3 - day2
+        diff4  = day2 - day1
         iCol = iCol + 1
         ageVal = result.iloc[i, cf - 1]
         tempVal = result.iloc[i, cf - 2]
         dividen = day5 + 1
         gammaFun = dayPredict / dividen
         data = {'day1': [day1], 'day2': [day2], 'day3': [day3], 'day4': [day4], 'day5': [day5], 'tempVal': [tempVal], 'ageVal': [ageVal],
-                'dayPredict': [dayPredict], 'gammaFun': [gammaFun]}
+                'dayPredict': [dayPredict], 'gammaFun': [gammaFun], 'diff1': [diff1], 'diff2': [diff2], 'diff3': [diff3], 'diff4': [diff4]}
         df2 = pd.DataFrame(data)
         df.append(df2)
 
 df = pd.concat(df).reset_index(drop=True)
 df = df.fillna(0)
 df.to_csv('G:/COVID19_Data/Processed_Data/TrainTest.csv')
+
 
 # Preparing real-time prediction data
 dfP=[]
@@ -75,10 +82,15 @@ for i in range(rf): # It scans through the entire row
     day3 = result.iloc[i, cf - 5]
     day2 = result.iloc[i, cf - 6]
     day1 = result.iloc[i, cf - 7]
+    diff1 = day5 - day4
+    diff2 = day4 - day3
+    diff3 = day3 - day2
+    diff4 = day2 - day1
     ageVal = result.iloc[i, cf - 1]
     tempVal = result.iloc[i, cf - 2]
     countryName = result.iloc[i, 0]
-    data = {'day1': [day1], 'day2': [day2], 'day3': [day3], 'day4': [day4], 'day5': [day5], 'tempVal': [tempVal], 'ageVal': [ageVal], 'Country': [countryName]}
+    data = {'day1': [day1], 'day2': [day2], 'day3': [day3], 'day4': [day4], 'day5': [day5], 'tempVal': [tempVal], 'ageVal': [ageVal], 'Country': [countryName],
+            'diff1': [diff1], 'diff2': [diff2], 'diff3': [diff3], 'diff4': [diff4]}
     df2 = pd.DataFrame(data)
     dfP.append(df2)
 
