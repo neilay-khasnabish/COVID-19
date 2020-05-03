@@ -1,5 +1,5 @@
 # COVID-19
-This model is an one-step ahead predictor.
+This model is a one-step ahead predictor.
 
 Steps to run the codes:
 1. Please run: COVID19_One_Step_Ahead_Prediction.ipynb
