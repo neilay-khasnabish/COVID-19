@@ -1,5 +1,5 @@
 # COVID-19
-This model is a one-step ahead predictor.
+This model predicts the number of COVID19 cases over time.
 
 
 Steps to run the codes:
